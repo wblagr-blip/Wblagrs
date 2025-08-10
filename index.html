@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <title>وبلاگ من</title>
+    <style>
+        body {
+            font-family: Tahoma;
+            margin: 0;
+            padding: 0;
+            background: #f7f7f7;
+        }
+
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
+
+        #filter, #search {
+            background: #eee;
+            padding: 10px;
+            text-align: center;
+        }
+
+        #filter select, #search input {
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+
+        #articleForm {
+            background: #fff;
+            padding: 15px;
+            margin: 20px;
+            border-radius: 8px;
+        }
+
+        #articleForm input, #articleForm textarea, #articleForm select, #registerForm input {
+            display: block;
+            width: 95%;
+            margin: 10px auto;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+
+        #articles {
+            margin: 20px;
+        }
+
+        .article {
+            background: #fff;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 6px;
+            box-shadow: 0 0 5px #ccc;
+        }
+
+        .article button {
+            margin: 5px;
+            padding: 5px 10px;
+        }
+
+        .likes {
+            float: right;
+            color: green;
+            margin-left: 10px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .dislikes {
+            float: right;
+            color: red;
+            margin-left: 10px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        #registerForm {
+            background: #fff;
+            padding: 15px;
+            margin: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>📰 وبلاگ من</h1>
+    <p>به وبلاگ من خوش آمدید_ اینجا  جای برای آموزش ،تجربه ، و درآمد است</p>
+</header>
+
+<section id="registerForm">
+    <h3>فرم ثبت‌نام</h3>
+    <input type="text" id="username" placeholder="نام کاربری">
+    <input type="password" id="password" placeholder="رمز عبور">
+    <button onclick="register()">ثبت‌نام</button>
+</section>
+
+<section id="filter">
+    <label>فیلتر دسته:</label>
+    <select id="categoryFilter" onchange="filterArticles()">
+        <option value="همه">همه</option>
+        <option value="طبیعت">طبیعت</option>
+        <option value="تکنولوژی">تکنولوژی</option>
+        <option value="ورزش">ورزش</option>
+    </select>
+</section>
+
+<section id="search">
+    <input type="text" id="searchInput" placeholder="جستجوی مقاله..." oninput="searchArticles()">
+</section>
+
+<section id="articleForm">
+    <h3>📝 افزودن مقاله</h3>
+    <input type="text" id="title" placeholder="عنوان مقاله">
+    <textarea id="content" rows="4" placeholder="متن مقاله"></textarea>
+    <select id="category">
+        <option value="طبیعت">طبیعت</option>
+        <option value="تکنولوژی">تکنولوژی</option>
+        <option value="ورزش">ورزش</option>
+    </select>
+    <button onclick="addArticle()">افزودن</button>
+</section>
+
+<main id="articles"></main>
+
+<script>
+    let articles = JSON.parse(localStorage.getItem('articles')) || [];
+
+    function renderArticles(data = articles) {
+        const container = document.getElementById('articles');
+        container.innerHTML = '';
+        data.forEach((article, index) => {
+            const div = document.createElement('div');
+            div.className = 'article';
+            div.innerHTML = `
+                <h3>${article.title}</h3>
+                <p>${article.content}</p>
+                <small>دسته: ${article.category}</small><br>
+                <span class="likes" onclick="likeArticle(${index})">👍 ${article.likes}</span>
+                <span class="dislikes" onclick="dislikeArticle(${index})">👎 ${article.dislikes || 0}</span>
+                <button onclick="deleteArticle(${index})">حذف</button>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    function addArticle() {
+        const title = document.getElementById('title').value.trim();
+        const content = document.getElementById('content').value.trim();
+        const category = document.getElementById('category').value;
+        if (title && content) {
+            articles.push({ title, content, category, likes: 0, dislikes: 0 });
+            localStorage.setItem('articles', JSON.stringify(articles));
+            renderArticles();
+            document.getElementById('title').value = '';
+            document.getElementById('content').value = '';
+        }
+    }
+
+    function deleteArticle(index) {
+        if (confirm("آیا از حذف مطمئن هستید؟")) {
+            articles.splice(index, 1);
+            localStorage.setItem('articles', JSON.stringify(articles));
+            renderArticles();
+        }
+    }
+
+    function likeArticle(index) {
+        articles[index].likes = (articles[index].likes || 0) + 1;
+        localStorage.setItem('articles', JSON.stringify(articles));
+        renderArticles();
+    }
+
+    function dislikeArticle(index) {
+        articles[index].dislikes = (articles[index].dislikes || 0) + 1;
+        localStorage.setItem('articles', JSON.stringify(articles));
+        renderArticles();
+    }
+
+    function filterArticles() {
+        const cat = document.getElementById('categoryFilter').value;
+        if (cat === 'همه') {
+            renderArticles();
+        } else {
+            const filtered = articles.filter(a => a.category === cat);
+            renderArticles(filtered);
+        }
+    }
+
+    function searchArticles() {
+        const q = document.getElementById('searchInput').value.toLowerCase();
+        const results = articles.filter(a =>
+            a.title.toLowerCase().includes(q) ||
+            a.content.toLowerCase().includes(q)
+        );
+        renderArticles(results);
+    }
+
+    function register() {
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value.trim();
+        if (username && password) {
+            alert(`کاربر ${username} ثبت‌نام شد! (رمز در LocalStorage ذخیره نشد)`);
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+        } else {
+            alert("نام کاربری و رمز را وارد کنید.");
+        }
+    }
+
+    renderArticles();
+</script>
+
+</body>
+</html>
